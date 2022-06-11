@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+  orchestrator:
+    build: ./orchestrator
+    container_name: mlops_zoomcamp_homework_3_orchestrator
+    ports:
+      - "${ORCHESTRATOR_PORT}:${ORCHESTRATOR_PORT}"
+    command: sh -c "prefect orion start --host 0.0.0.0"
+    networks:
+      - app_net
+  server:
+    build: ./server
+    container_name: mlops_zoomcamp_homework_3_server
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    command: sh -c "mlflow server --backend-store-uri postgresql://${DB_USER}:${DB_PASS}@persistor/${DB_NAME} --default-artifact-root ./${ARTIFACT_STORAGE} --host 0.0.0.0 --port ${SERVER_PORT}"
+    depends_on:
+      - persistor
+    networks:
+      - app_net
+  persistor:
+    build: ./persistor
+    container_name: mlops_zoomcamp_homework_3_persistor
+    environment:
+      - "POSTGRES_DB=${DB_NAME}"
+      - "POSTGRES_USER=${DB_USER}"
+      - "POSTGRES_PASSWORD=${DB_PASS}"
+    volumes: 
+      - ./persistor/:/data
+    networks:
+      - app_net
+  predictor:
+    build: ./predictor
+    container_name: mlops_zoomcamp_homework_3_predictor
+    command: sh -c "prefect config set PREFECT_API_URL='http://orchestrator:4200/api';python homework.py"
+    depends_on:
+      - server
+      - orchestrator
+    networks:
+      - app_net
+networks:
+  app_net:
+    name: mlops_zoomcamp_homework_3_net
