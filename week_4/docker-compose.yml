@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  preperator:
+    build: ./preperator
+    container_name: mlops_zoomcamp_homework_4_preperator
+    ports:
+      - 8888:8888
+    command: sh -c "pipenv shell; pipenv run jupyter notebook --ip 0.0.0.0 --allow-root"
+    networks:
+      - app_net
+  imaginator:
+    build: ./imaginator
+    container_name: mlops_zoomcamp_homework_4_imaginator
+    command: sh -c "pipenv shell; pipenv run python starter.py --year 2021 --month 2; pipenv run python starter.py --year 2021 --month 3; pipenv run python starter.py --year 2021 --month 4"
+    networks:
+      - app_net
+networks:
+  app_net:
+    name: mlops_zoomcamp_homework_4_net
